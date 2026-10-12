@@ -1,9 +1,9 @@
 /*
  * Service worker do ScanCarrinho: rede primeiro, cache como reserva (funciona offline).
- * A cada versão nova, mude CACHE (ex.: scancarrinho-v0.1.1) junto com js/version.js e o CHANGELOG.md.
+ * A cada versão nova, mude CACHE (ex.: scancarrinho-v0.2.1) junto com js/version.js e o CHANGELOG.md.
  * Nunca guarda dados do usuário: só os arquivos do app.
  */
-const CACHE = "scancarrinho-v0.1.0";
+const CACHE = "scancarrinho-v0.2.0";
 const FILES = [
   "./",
   "./index.html",
@@ -18,6 +18,23 @@ const FILES = [
   "./js/version.js",
   "./js/db.js",
   "./js/scanner.js",
+  "./js/prices.js",
+  "./js/products.js",
+  "./js/cart.js",
+  "./js/stores.js",
+  "./js/categories.js",
+  "./js/ui/dom.js",
+  "./js/ui/icons.js",
+  "./js/ui/money.js",
+  "./js/ui/toast.js",
+  "./js/ui/dialog.js",
+  "./js/ui/install.js",
+  "./js/ui/nav.js",
+  "./js/screens/loja.js",
+  "./js/screens/scan.js",
+  "./js/screens/lista.js",
+  "./js/screens/produto.js",
+  "./js/screens/resumo.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-192.png",

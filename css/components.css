@@ -1,1 +1,67 @@
-/* Componentes (botões, cartões, listas) — a preencher. */
+/* Topo e abas */
+.topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; height: var(--topbar-h);
+  padding: 0 12px; padding-top: env(safe-area-inset-top); background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
+.topbar h1 { flex: 1; text-align: center; font-size: 1.3rem; color: var(--color-primary-dark); }
+.topbar .icon-btn { position: absolute; left: 12px; }
+.topbar .chip { position: absolute; right: 12px; }
+.tabs { position: fixed; bottom: 0; left: 0; right: 0; z-index: 5; display: flex; height: calc(var(--tabs-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom); background: var(--color-surface); border-top: 1px solid var(--color-border); }
+.tabs a { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  text-decoration: none; color: var(--color-muted); font-size: .85rem; font-weight: 600; }
+.tabs a.ativo { color: var(--color-primary); }
+.tab-ico { display: inline-flex; width: 28px; height: 28px; }
+.tab-ico svg { width: 100%; height: 100%; }
+.badge { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
+  background: var(--color-primary); color: #fff; font-size: .75rem; display: flex; align-items: center; justify-content: center; }
+
+/* Botões */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 18px;
+  border-radius: var(--radius); border: 2px solid transparent; font-weight: 700; font-size: 1.05rem; text-decoration: none; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primario { background: var(--color-primary); color: #fff; }
+.btn-primario:active { background: var(--color-primary-dark); }
+.btn-claro { background: var(--color-surface); color: var(--color-primary-dark); border-color: var(--color-primary-light); }
+.btn-perigo { background: var(--color-danger); color: #fff; }
+.btn-perigo-claro { background: var(--color-danger-soft); color: var(--color-danger); }
+.btn-grande { width: 100%; min-height: 60px; font-size: 1.2rem; margin-top: 12px; }
+.btn-bloco { width: 100%; margin-top: 10px; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: none; border-radius: 50%;
+  background: transparent; color: var(--color-muted); }
+.icon-btn.redondo { background: var(--color-primary-soft); color: var(--color-primary-dark); }
+.topbar .icon-btn { background: var(--color-primary-soft); color: var(--color-primary-dark); }
+.chip { border: 2px solid var(--color-primary); background: var(--color-surface); color: var(--color-primary); border-radius: 20px;
+  padding: 4px 12px; font-weight: 700; font-size: .9rem; }
+
+/* Cartões, campos e textos */
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; margin: 12px 0; }
+.card h3 { font-size: 1.05rem; margin-bottom: 10px; color: var(--color-primary-dark); }
+.campo { width: 100%; min-height: 52px; padding: 10px 14px; border: 2px solid var(--color-border); border-radius: var(--radius-sm); background: #fff; }
+.campo:focus { border-color: var(--color-primary); outline: none; }
+.rotulo { display: block; font-weight: 700; margin: 14px 0 6px; }
+.erro { color: var(--color-danger); font-weight: 600; }
+.nota { color: var(--color-muted); font-size: .9rem; text-align: center; }
+.aviso { display: flex; align-items: center; gap: 6px; background: #FFF8E1; border: 1px solid #FFE082; border-radius: var(--radius-sm); padding: 10px 12px; }
+.vazio, .vazio-grande { text-align: center; color: var(--color-muted); }
+.vazio-grande { padding: 32px 8px; }
+.vazio-grande h2 { color: var(--color-text); margin: 8px 0; }
+.ico-gigante { width: 72px; height: 72px; color: var(--color-primary-light); }
+.avatar { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex: none; border-radius: 50%;
+  color: #fff; font-weight: 800; font-size: 1.1rem; letter-spacing: .5px; }
+.avatar-novo { background: var(--color-primary-soft); color: var(--color-primary); }
+.avatar-mini { width: 30px; height: 30px; font-size: .75rem; }
+
+/* Avisos (toast) e diálogo */
+.toasts { position: fixed; left: 12px; right: 12px; bottom: calc(var(--tabs-h) + 12px + env(safe-area-inset-bottom)); z-index: 20;
+  display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; max-width: 520px; width: 100%; padding: 12px 16px;
+  background: var(--color-primary-dark); color: #fff; border-radius: var(--radius); box-shadow: 0 6px 20px rgba(0,0,0,.2); transition: opacity .25s; }
+.toast span { flex: 1; }
+.toast.saindo { opacity: 0; }
+.toast-btn { border: none; background: #fff; color: var(--color-primary-dark); font-weight: 800; border-radius: 10px; padding: 8px 12px; }
+.dlg-fundo { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; padding: 12px; }
+.dlg { width: 100%; max-width: 480px; background: var(--color-surface); border-radius: 20px; padding: 20px; margin-bottom: env(safe-area-inset-bottom); }
+.dlg h2 { font-size: 1.25rem; margin-bottom: 8px; }
+.dlg-acoes { display: flex; gap: 10px; margin-top: 18px; }
+.dlg-acoes .btn { flex: 1; }
+@media (min-width: 700px) { .dlg-fundo { align-items: center; } }
+body.sem-abas .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }

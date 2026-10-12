@@ -50,7 +50,9 @@ O PWA **não** chama o Atacadão direto: o site não envia cabeçalhos CORS (tes
 - Validação: `cep` = 8 dígitos; `ean` = 8 a 14 dígitos; `unidade` = `^atacadaobr\d+$`. Qualquer outro caminho → 404. O Worker **nunca** repassa URL livre (não é proxy aberto).
 - Resposta enxuta (só os campos acima), sem cookies do Atacadão.
 
-### 4.2 Cache (Cache API do Worker, sem custo de KV)
+### 4.2 Cache (Workers KV, com expiração automática)
+
+No `workers.dev` a Cache API não guarda nada, por isso o cache usa o KV (plano grátis: 100 mil leituras e 1 mil gravações por dia).
 
 | Dado | Tempo |
 |---|---|
@@ -66,7 +68,7 @@ O PWA **não** chama o Atacadão direto: o site não envia cabeçalhos CORS (tes
 
 ### 4.4 Limites e proteção
 
-- Por IP: até **60 consultas/min** e **1.000/dia** no Worker (contador em memória/Cache; ajustável). Acima → 429 com `Retry-After`.
+- Por IP: até **60 consultas/min** e **1.000/dia** no Worker (contador em memória por instância, melhor esforço; ajustável). Acima → 429 com `Retry-After`.
 - Ao Atacadão: no máximo **1 consulta de preço por EAN+unidade a cada 6 h** (cache) e **timeout de 8 s**.
 - `User-Agent` identificável: `ScanCarrinho/0.3 (uso pessoal; contato: GitHub ViniciusJrCarlos)`.
 
@@ -76,7 +78,7 @@ O PWA **não** chama o Atacadão direto: o site não envia cabeçalhos CORS (tes
 
 | Código | Quando | O que o app faz |
 |---|---|---|
-| `nao_encontrado` (404) | EAN fora do catálogo | Abre cadastro manual |
+| `nao_encontrado` (200 + `encontrado:false`) | EAN fora do catálogo / CEP sem unidade | Abre cadastro manual |
 | `sem_estoque` (200 + `disponivel:false`) | Sem estoque na unidade | Usa o preço com aviso |
 | `limite` (429) | Muitas consultas | Toast "Aguarde um instante" + manual |
 | `origem_indisponivel` (502/504) | Atacadão fora/mudou/bloqueou | Usa último preço salvo (`aproximado`) ou manual |

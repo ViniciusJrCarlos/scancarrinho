@@ -88,3 +88,16 @@
 .comp-nota.bom { color: var(--color-primary); }
 .comp-nota.ruim { color: #E65100; }
 .versao { text-align: center; color: var(--color-muted); font-size: .85rem; padding: 12px 0; }
+
+/* v0.3.0: Atacadão + CEP, selos e avisos */
+.atacadao { border: 2px solid #F57C00; }
+.atacadao-topo { display: flex; align-items: center; gap: 12px; }
+.atacadao-topo strong { display: block; font-size: 1.2rem; }
+.atacadao .linha .campo { letter-spacing: 1px; }
+.unidades .loja { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; margin: 8px 0 0; font-size: 1.05rem; }
+.nota-esq { color: var(--color-muted); font-size: .95rem; margin: 8px 0 0; }
+.secao { margin: 18px 0 0; font-size: 1rem; color: var(--color-muted); }
+.selo-auto { display: flex; align-items: center; gap: 4px; margin: 8px 0 0; color: #E65100; font-weight: 700; font-size: .95rem; }
+.buscando { margin: 8px 0 0; color: var(--color-primary-dark); font-weight: 600; }
+.aviso-precos { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #FFF8E1; border-color: #FFE082; }
+.aviso-precos p { margin: 0; font-weight: 600; }

@@ -1,0 +1,6 @@
+{
+  "name": "scancarrinho-precos",
+  "private": true,
+  "description": "Worker de preços do ScanCarrinho (proxy do Atacadão)",
+  "scripts": { "deploy": "wrangler deploy", "dev": "wrangler dev" }
+}

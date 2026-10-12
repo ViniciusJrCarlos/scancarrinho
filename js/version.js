@@ -1,2 +1,2 @@
 /* Versão do app: atualizar junto com CHANGELOG.md, CACHE do sw.js e a tag git. */
-export const APP_VERSION = "0.2.0";
+export const APP_VERSION = "0.3.0";

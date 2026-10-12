@@ -3,6 +3,28 @@
 Todas as mudanças importantes do ScanCarrinho ficam registradas aqui.
 Cada versão validada recebe uma tag no Git (ex.: `v0.1.0`).
 
+## [0.3.0] — 2026-10-12
+
+Preço automático pelo site do Atacadão: escaneou, o preço da sua unidade aparece sozinho.
+
+### Adicionado
+- Worker na Cloudflare (`worker/`, `scancarrinho-precos`): endpoints `/unidades`, `/produto` e `/preco`, validação rígida, cache no KV (unidades e produtos 7 dias, preço 6 h), CORS só para `https://viniciusjrcarlos.github.io`, limite por IP e tempo máximo de 8 s.
+- Tela "Onde você compra?": Atacadão com CEP e escolha da unidade; Carrefour, Pão de Açúcar, Extra, Assaí e lojas criadas ficam com preço manual.
+- Preço automático ao escanear (fonte `atacadaoPriceSource` ligada com `setPriceSource`). Escanear de novo em até 6 h soma sem nova consulta.
+- Selos de origem do preço: **preço do site**, **manual** e **aproximado**, mais aviso "sem estoque no site".
+- Detalhe do produto: preço do site travado com hora da consulta, "Atualizar preço pelo site" e "Corrigir preço" (vira manual). Média dos preços observados (site + manual).
+- Lista: aviso e botão "Atualizar preços" para itens aproximados ou com mais de 24 h.
+- Sem internet ou site fora do ar: usa o último preço salvo (aproximado); produto novo vai para o cadastro manual.
+- `docs/ESCOPO.md` com o escopo completo.
+
+### Alterado
+- IndexedDB versão 3 (mantém os dados da 0.2.0; preços antigos ficam como "manual").
+- CSP: `connect-src` liberado só para o Worker de produção.
+
+### Ainda não incluído
+- Preço automático de Carrefour, Pão de Açúcar, Extra e Assaí (sites bloqueiam acesso automático).
+- Leitura do QR Code da nota fiscal (NFC-e) — planejado para a 0.4.0.
+
 ## [0.2.0] — 2026-10-12
 
 App funcional: escolher a loja, escanear ou digitar o código, anotar o preço e ver o total.

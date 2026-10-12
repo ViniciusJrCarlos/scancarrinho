@@ -3,7 +3,7 @@
  * A cada versão nova, mude CACHE (ex.: scancarrinho-v0.2.1) junto com js/version.js e o CHANGELOG.md.
  * Nunca guarda dados do usuário: só os arquivos do app.
  */
-const CACHE = "scancarrinho-v0.2.0";
+const CACHE = "scancarrinho-v0.3.0";
 const FILES = [
   "./",
   "./index.html",
@@ -23,6 +23,9 @@ const FILES = [
   "./js/cart.js",
   "./js/stores.js",
   "./js/categories.js",
+  "./js/config.js",
+  "./js/atacadao.js",
+  "./js/auto.js",
   "./js/ui/dom.js",
   "./js/ui/icons.js",
   "./js/ui/money.js",

@@ -7,7 +7,7 @@ export function h(tag, props = {}, ...kids) {
     else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2), v);
     else if (k === "style") Object.assign(el.style, v);
     else if (k === "dataset") Object.assign(el.dataset, v);
-    else if (["value", "checked", "disabled", "hidden", "selected"].includes(k)) el[k] = v;
+    else if (["value", "checked", "disabled", "hidden", "selected", "readOnly"].includes(k)) el[k] = v;
     else el.setAttribute(k, v === true ? "" : String(v));
   }
   for (const c of kids.flat(Infinity)) {

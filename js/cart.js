@@ -4,14 +4,15 @@ import { mediaPreco } from "./prices.js";
 /* Carrinho: chave = código de barras. Escanear de novo soma a quantidade. */
 const avisar = () => window.dispatchEvent(new CustomEvent("carrinho"));
 export const itemDoCarrinho = (barcode) => dbGet("cart", barcode);
-export async function adicionar(barcode, qty, cents, storeId) {
+/* meta: { origem: "site" | "manual" | "aproximado", consultadoEm, disponivel } */
+export async function adicionar(barcode, qty, cents, storeId, meta = {}) {
   const cur = await dbGet("cart", barcode);
-  await dbPut("cart", { barcode, qty: (cur?.qty || 0) + qty, cents, storeId, added: cur?.added || Date.now() });
+  await dbPut("cart", { origem: "manual", ...cur, ...meta, barcode, qty: (cur?.qty || 0) + qty, cents, storeId, added: cur?.added || Date.now() });
   avisar();
 }
-export async function definir(barcode, qty, cents, storeId) {
+export async function definir(barcode, qty, cents, storeId, meta = {}) {
   const cur = await dbGet("cart", barcode);
-  await dbPut("cart", { barcode, qty, cents, storeId, added: cur?.added || Date.now() });
+  await dbPut("cart", { origem: "manual", ...cur, ...meta, barcode, qty, cents, storeId, added: cur?.added || Date.now() });
   avisar();
 }
 export async function remover(barcode) { await dbDel("cart", barcode); avisar(); }

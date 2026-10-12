@@ -1,0 +1,16 @@
+# Worker de preços do ScanCarrinho (Cloudflare Workers, plano grátis).
+name = "scancarrinho-precos"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+# Única origem liberada no CORS (produção).
+ALLOWED_ORIGIN = "https://viniciusjrcarlos.github.io"
+# Origens extras só para desenvolvimento (vazio em produção). Ex.: wrangler dev --var DEV_ORIGINS:http://localhost:8080
+DEV_ORIGINS = ""
+
+# Cache das consultas (unidades, produtos e preços), com expiração automática.
+[[kv_namespaces]]
+binding = "CACHE"
+id = "a991e92b911d4e8ba8628444480c3d97"

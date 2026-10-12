@@ -3,57 +3,112 @@ import { icon } from "../ui/icons.js";
 import { go } from "../ui/nav.js";
 import { toast } from "../ui/toast.js";
 import { brl } from "../ui/money.js";
+import { REUSAR_PRECO_MS } from "../config.js";
 import { buscarLoja, lojaAtualId } from "../stores.js";
 import { buscarProduto, codigoValido, novoCodigoSemBarra } from "../products.js";
-import { ultimoPreco } from "../prices.js";
-import { adicionar, totais } from "../cart.js";
+import { ultimoPreco, consultarPreco } from "../prices.js";
+import { adicionar, itemDoCarrinho, totais } from "../cart.js";
+import { guardarResultadoSite } from "../auto.js";
 import { iniciarScanner, scannerDisponivel } from "../scanner.js";
 import { avatarLoja } from "./loja.js";
 
-/* Usado pela câmera e pela digitação: produto conhecido com preço nesta loja entra direto (+1). */
-export async function tratarCodigo(codigo, { aoAdicionar } = {}) {
+const irProduto = (codigo, extra = "") => go("#/produto/" + encodeURIComponent(codigo) + "?de=scan" + extra);
+
+/*
+ * Usado pela câmera e pela digitação.
+ * Atacadão: busca o preço da unidade no site. Sem resposta: usa o último preço salvo (aproximado) ou pede o preço.
+ * Outras lojas: produto conhecido com preço entra direto (+1); novo pede nome e preço.
+ */
+export async function tratarCodigo(codigo, { aoAdicionar, aoBuscar } = {}) {
   const storeId = lojaAtualId();
+  const loja = await buscarLoja(storeId);
   const prod = await buscarProduto(codigo);
+
+  if (loja?.tipo === "atacadao" && /^\d{8,14}$/.test(codigo)) {
+    const noCarrinho = await itemDoCarrinho(codigo);
+    if (noCarrinho?.origem === "site" && Date.now() - (noCarrinho.consultadoEm || 0) < REUSAR_PRECO_MS) {
+      await adicionar(codigo, 1, noCarrinho.cents, storeId);
+      vibrate();
+      toast(`${prod?.name || codigo} +1 · ${brl(noCarrinho.cents)}`);
+      aoAdicionar?.();
+      return true;
+    }
+    aoBuscar?.(true);
+    const r = await consultarPreco(codigo, loja);
+    aoBuscar?.(false);
+    if (r.ok) {
+      const meta = await guardarResultadoSite(codigo, storeId, r.dados);
+      await adicionar(codigo, 1, r.dados.centavos, storeId, meta);
+      vibrate();
+      toast(`${r.dados.nome} +1 · ${brl(r.dados.centavos)} · preço do site` + (meta.disponivel ? "" : " (sem estoque no site: confira na gôndola)"),
+        { action: "Ver", onAction: () => irProduto(codigo) });
+      aoAdicionar?.();
+      return true;
+    }
+    if (r.erro === "nao_encontrado") {
+      vibrate([40, 40, 40]);
+      irProduto(codigo, "&motivo=nao_encontrado");
+      return false;
+    }
+    const ult = prod ? await ultimoPreco(storeId, codigo) : null;
+    if (prod && ult != null) {
+      await adicionar(codigo, 1, ult, storeId, { origem: "aproximado" });
+      vibrate();
+      toast(`${prod.name} +1 · ${brl(ult)} · aproximado (${r.erro === "offline" ? "sem internet" : "site sem resposta"})`);
+      aoAdicionar?.();
+      return true;
+    }
+    toast(r.erro === "limite" ? "Muitas consultas. Aguarde um instante ou informe o preço." : "Sem preço automático agora. Informe o preço.");
+    irProduto(codigo, "&motivo=" + r.erro);
+    return false;
+  }
+
   const preco = prod ? await ultimoPreco(storeId, codigo) : null;
   if (prod && preco != null) {
-    await adicionar(codigo, 1, preco, storeId);
+    await adicionar(codigo, 1, preco, storeId, { origem: "manual" });
     vibrate();
-    toast(`${prod.name} +1 · ${brl(preco)}`, { action: "Editar", onAction: () => go("#/produto/" + encodeURIComponent(codigo) + "?de=scan") });
+    toast(`${prod.name} +1 · ${brl(preco)}`, { action: "Editar", onAction: () => irProduto(codigo) });
     aoAdicionar?.();
     return true;
   }
   vibrate([40, 40, 40]);
-  go("#/produto/" + encodeURIComponent(codigo) + "?de=scan");
+  irProduto(codigo);
   return false;
 }
 
 export async function render(view, { topo }) {
   topo({ titulo: "Escanear" });
   const loja = await buscarLoja(lojaAtualId());
+  const auto = loja?.tipo === "atacadao";
   const video = h("video", { class: "video", playsinline: true, muted: true, "aria-label": "Imagem da câmera" });
   const status = h("p", { class: "scan-status" }, "Preparando a câmera…");
   const camBox = h("div", { class: "camera" }, video, h("div", { class: "mira", "aria-hidden": "true" }), status);
   const resumoBar = h("a", { href: "#/lista", class: "barra-total" });
+  const buscando = h("p", { class: "buscando", hidden: true, role: "status" }, h("span", { class: "giro", "aria-hidden": "true" }), "Buscando preço no Atacadão…");
   let scanner = null, saiu = false, ocupado = false;
 
   const atualizarBarra = async () => {
     const t = await totais();
     resumoBar.replaceChildren(icon("cart"), h("span", {}, `${t.qtd} ${t.qtd === 1 ? "item" : "itens"}`), h("strong", {}, brl(t.total)), h("span", { class: "seta" }, "Ver lista ›"));
   };
+  const opcoes = { aoAdicionar: atualizarBarra, aoBuscar: (b) => { buscando.hidden = !b; } };
 
-  const inp = h("input", { class: "campo", inputmode: "numeric", placeholder: "Ex.: 7891234567890", autocomplete: "off", "aria-label": "Código de barras", maxlength: "14" });
+  const inp = h("input", { class: "campo", id: "codigo-manual", inputmode: "numeric", placeholder: "Ex.: 7891234567890", autocomplete: "off", "aria-label": "Código de barras", maxlength: "14" });
   const erro = h("p", { class: "erro", hidden: true });
+  const btnAdd = h("button", { class: "btn btn-primario", type: "submit" }, "Adicionar");
   const form = h("form", { class: "card manual", novalidate: true, onsubmit: async (e) => {
     e.preventDefault();
+    if (ocupado) return;
     const c = inp.value.replace(/\D/g, "");
     if (!codigoValido(c)) { erro.textContent = "Digite só os números do código (4 a 14 dígitos)."; erro.hidden = false; inp.focus(); return; }
     erro.hidden = true;
     inp.value = "";
-    await tratarCodigo(c, { aoAdicionar: atualizarBarra });
+    ocupado = true; btnAdd.disabled = true;
+    try { await tratarCodigo(c, opcoes); } finally { ocupado = false; btnAdd.disabled = false; }
   } },
     h("label", { class: "rotulo", for: "codigo-manual" }, icon("keyboard"), " Digitar o código"),
-    h("div", { class: "linha" }, Object.assign(inp, { id: "codigo-manual" }), h("button", { class: "btn btn-primario", type: "submit" }, "Adicionar")),
-    erro,
+    h("div", { class: "linha" }, inp, btnAdd),
+    erro, buscando,
     h("button", { type: "button", class: "btn btn-claro btn-bloco", onclick: () => go("#/produto/" + novoCodigoSemBarra() + "?de=scan") }, icon("plus"), "Item sem código (granel, feira…)"));
 
   const ligar = async () => {
@@ -67,7 +122,7 @@ export async function render(view, { topo }) {
       const s = await iniciarScanner(video, async (c) => {
         if (ocupado || saiu) return;
         ocupado = true;
-        try { status.textContent = "Lido: " + c; await tratarCodigo(c, { aoAdicionar: atualizarBarra }); }
+        try { status.textContent = "Lido: " + c; await tratarCodigo(c, opcoes); }
         finally { ocupado = false; }
       });
       if (saiu) s.stop(); else scanner = s;
@@ -82,6 +137,7 @@ export async function render(view, { topo }) {
 
   view.append(
     h("a", { href: "#/loja", class: "pilula-loja" }, loja ? avatarLoja(loja, "avatar avatar-mini") : null, h("span", {}, loja?.name || "Loja"), h("small", {}, "trocar")),
+    auto ? h("p", { class: "selo-auto" }, icon("tag"), " Preço automático pelo site do Atacadão") : null,
     camBox, form, resumoBar);
   atualizarBarra();
   ligar();

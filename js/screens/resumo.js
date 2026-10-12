@@ -22,7 +22,7 @@ export async function render(view, { topo }) {
   const finalizar = async () => {
     if (!(await confirmar("Finalizar compra?", `Guardar esta compra de ${brl(t.total)} no histórico e esvaziar o carrinho?`, { ok: "Finalizar" }))) return;
     await dbPut("history", { date: Date.now(), storeId: loja?.id, storeName: loja?.name, total: t.total, qtd: t.qtd,
-      itens: t.itens.map((i) => ({ barcode: i.barcode, name: i.name, qty: i.qty, cents: i.cents, category: i.category })) });
+      itens: t.itens.map((i) => ({ barcode: i.barcode, name: i.name, qty: i.qty, cents: i.cents, category: i.category, origem: i.origem })) });
     await esvaziar();
     toast("Compra finalizada e guardada no histórico.");
     go("#/resumo");
@@ -32,7 +32,9 @@ export async function render(view, { topo }) {
     h("section", { class: "card total-grande" },
       h("small", {}, "Total do seu carrinho"),
       h("strong", { class: "total-valor", id: "total-resumo" }, brl(t.total)),
-      h("p", {}, `${t.qtd} ${t.qtd === 1 ? "item" : "itens"} · ${loja?.name || ""}`)),
+      h("p", {}, `${t.qtd} ${t.qtd === 1 ? "item" : "itens"} · ${loja?.name || ""}`),
+      loja?.tipo === "atacadao" && t.itens.length ? h("p", { class: "nota" }, "Preços do site do Atacadão (" + loja.unidadeNome + "). Podem diferir da gôndola.") : null,
+      t.itens.some((i) => i.origem === "aproximado") ? h("p", { class: "nota" }, "Há preços aproximados (último preço salvo). Atualize na Lista.") : null),
     t.itens.length ? h("section", { class: "card" },
       h("h3", {}, "Resumo por categoria"),
       h("ul", { class: "cats" }, cats.map(([id, v]) => {
@@ -51,7 +53,7 @@ export async function render(view, { topo }) {
       h("p", { class: "comp-nota " + (dif <= 0 ? "bom" : "ruim") }, icon(dif <= 0 ? "leaf" : "chart"),
         dif === 0 ? " Mesmo valor da média dos preços que você anotou nesta loja."
           : dif < 0 ? ` ${brl(-dif)} abaixo da média. Boa compra!` : ` ${brl(dif)} acima da média dos preços que você anotou.`),
-      h("p", { class: "nota" }, "A média usa os preços registrados por você em cada produto nesta loja.")) : null,
+      h("p", { class: "nota" }, "A média usa os preços observados (site e anotados) de cada produto nesta loja.")) : null,
     t.itens.length ? h("button", { type: "button", class: "btn btn-primario btn-grande", onclick: finalizar }, "Finalizar compra ›")
       : h("div", { class: "vazio-grande" }, h("p", {}, "Nenhum item no carrinho ainda."), h("a", { href: "#/scan", class: "btn btn-primario" }, icon("scan"), "Escanear produtos")),
     compras.length ? h("section", { class: "card" }, h("h3", {}, "Últimas compras"),

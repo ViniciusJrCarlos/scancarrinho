@@ -4,9 +4,10 @@
  * prices   histórico de preços (id auto, índice [storeId, barcode])
  * cart     carrinho atual (barcode = chave; quantidade é somada)
  * history  compras finalizadas (id auto)
+ * v3: preços e carrinho ganham "origem" (site | manual | aproximado); lojas ganham "tipo".
  */
 const DB_NAME = "scancarrinho";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let dbPromise = null;
 
 export function openDB() {
@@ -24,6 +25,21 @@ export function openDB() {
           .createIndex("storeBarcode", ["storeId", "barcode"]);
         db.createObjectStore("cart", { keyPath: "barcode" });
         db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+      }
+      if (e.oldVersion >= 2 && e.oldVersion < 3) {
+        // Migração v2 -> v3: mantém tudo; dados antigos eram digitados (origem "manual").
+        const tx = r.transaction;
+        const marcar = (nome, campo, valor) => {
+          tx.objectStore(nome).openCursor().onsuccess = (ev) => {
+            const c = ev.target.result;
+            if (!c) return;
+            if (c.value[campo] == null) c.update({ ...c.value, [campo]: valor });
+            c.continue();
+          };
+        };
+        marcar("prices", "origem", "manual");
+        marcar("cart", "origem", "manual");
+        marcar("stores", "tipo", "manual");
       }
     };
     r.onsuccess = () => resolve(r.result);

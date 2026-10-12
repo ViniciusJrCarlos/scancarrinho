@@ -1,0 +1,12 @@
+# Lixo de sistema / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+node_modules/
+# Nunca versionar backups ou exportações com dados pessoais
+scancarrinho-backup-*.json
+*.backup.json

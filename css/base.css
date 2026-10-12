@@ -1,0 +1,17 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+button {
+  font-size: 1.1rem;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--color-primary);
+  color: white;
+  cursor: pointer;
+}

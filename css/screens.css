@@ -101,3 +101,7 @@
 .buscando { margin: 8px 0 0; color: var(--color-primary-dark); font-weight: 600; }
 .aviso-precos { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #FFF8E1; border-color: #FFE082; }
 .aviso-precos p { margin: 0; font-weight: 600; }
+/* v0.4.0: várias redes automáticas */
+.siglas { display: flex; }
+.siglas .avatar { margin-right: -8px; border: 2px solid #fff; }
+.parecido { display: block; color: #455A64; font-style: italic; }

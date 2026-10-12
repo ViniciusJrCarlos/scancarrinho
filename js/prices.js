@@ -1,5 +1,6 @@
 import { dbByIndex, dbPut } from "./db.js";
-import { buscarPrecoAtacadao } from "./atacadao.js";
+import { buscarPreco } from "./precos-site.js";
+import { redeDaLoja, REDES } from "./redes.js";
 /*
  * Fonte de preços plugável.
  * Uma fonte é um objeto com: id, label e os métodos assíncronos
@@ -7,8 +8,8 @@ import { buscarPrecoAtacadao } from "./atacadao.js";
  *   latest(storeId, barcode)  -> centavos | null
  *   average(storeId, barcode) -> { cents, count } | null (média dos preços observados)
  *   record(storeId, barcode, cents, origem) -> grava um preço observado
- * e, opcionalmente, lookup(barcode, loja) -> consulta automática de preço.
- * Fontes: localPriceSource (preços anotados) e atacadaoPriceSource (Worker + histórico local).
+ * e, opcionalmente, lookup(barcode, loja, nome) -> consulta automática de preço.
+ * Fontes: localPriceSource (preços anotados) e sitePriceSource (Worker das redes + histórico local).
  */
 export const localPriceSource = {
   id: "local",
@@ -31,16 +32,18 @@ export const localPriceSource = {
   },
 };
 
-/* Atacadão: consulta o Worker (preço da unidade escolhida). O histórico continua local. */
-export const atacadaoPriceSource = {
+/* Redes automáticas: consulta o Worker (preço da unidade ou da rede). O histórico continua local. */
+export const sitePriceSource = {
   ...localPriceSource,
-  id: "atacadao",
-  label: "Preço do site do Atacadão",
-  async lookup(barcode, loja) {
-    if (loja?.tipo !== "atacadao" || !/^\d{8,14}$/.test(barcode)) return { ok: false, erro: "nao_suportado" };
-    return buscarPrecoAtacadao(barcode, loja.unidadeId);
+  id: "site",
+  label: "Preço do site da rede",
+  async lookup(barcode, loja, nome) {
+    const rede = redeDaLoja(loja);
+    if (!rede || !/^\d{8,14}$/.test(barcode)) return { ok: false, erro: "nao_suportado" };
+    return buscarPreco(barcode, { rede, unidade: REDES[rede].regional ? loja.unidadeId : "", nome });
   },
 };
+export const atacadaoPriceSource = sitePriceSource; // nome da v0.3.0
 
 const METODOS = ["history", "latest", "average", "record"];
 let fonte = localPriceSource;
@@ -52,11 +55,11 @@ export const getPriceSource = () => fonte;
 export const historicoPreco = (s, b) => fonte.history(s, b);
 export const ultimoPreco = (s, b) => fonte.latest(s, b);
 export const mediaPreco = (s, b) => fonte.average(s, b);
-export const consultarPreco = (b, loja) => (fonte.lookup ? fonte.lookup(b, loja) : Promise.resolve({ ok: false, erro: "nao_suportado" }));
+export const consultarPreco = (b, loja, nome) => (fonte.lookup ? fonte.lookup(b, loja, nome) : Promise.resolve({ ok: false, erro: "nao_suportado" }));
 /* Registra o preço observado quando muda (ou, para o site, quando o último tem mais de 24 h). */
 export async function registrarPreco(storeId, barcode, cents, { origem = "manual", sempre = false } = {}) {
   const h = await fonte.history(storeId, barcode);
   const ult = h.at(-1);
   const velho = ult && Date.now() - ult.date > 24 * 3600e3;
-  if (sempre || !ult || ult.cents !== cents || (origem === "site" && velho)) await fonte.record(storeId, barcode, cents, origem);
+  if (sempre || !ult || ult.cents !== cents || (origem !== "manual" && velho)) await fonte.record(storeId, barcode, cents, origem);
 }

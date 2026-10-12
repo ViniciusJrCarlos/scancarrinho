@@ -1,4 +1,6 @@
-# ScanCarrinho — Escopo (preço automático pelo Atacadão)
+# ScanCarrinho — Escopo (preço automático pelo site das redes)
+
+> v0.4.0: além do Atacadão, Sam's Club, Bistek, Supernosso e Covabra (veja o Roadmap, seção 10). O texto abaixo descreve o desenho original da v0.3.0, que continua valendo para todas as redes.
 
 > Documento de escopo. Versão: 12/10/2026. Autor: Vinicius Carlos.
 > Estado atual: v0.1.0 publicada; v0.2.0 pronta localmente (não publicada).
@@ -141,10 +143,22 @@ Preferências (`localStorage`): loja/unidade atual, CEP, ordenação.
 | Versão | Conteúdo | Estado |
 |---|---|---|
 | **v0.1.0** | Esqueleto PWA publicado | Publicada |
-| **v0.2.0** | Telas Loja/Escanear/Produto/Lista/Resumo, preço manual por loja, média, histórico, offline, CSP, instalar | **Pronta localmente** (aguardando aprovação para publicar) |
-| **v0.3.0** | Worker (`/worker` no repositório) + Atacadão por CEP/unidade, preço automático, selos site/manual/aproximado, IndexedDB v3 | Próxima |
-| **v0.4.0** | Leitor do **QR Code da NFC-e** (nota fiscal) para registrar os preços reais pagos | Planejada |
-| **v0.5.0** | Polimento: tema escuro/alto contraste, backup/exportação, atualização de preços em lote, acessibilidade, ícone final | Planejada |
+| **v0.2.0** | Telas Loja/Escanear/Produto/Lista/Resumo, preço manual por loja, média, histórico, offline, CSP, instalar | Publicada |
+| **v0.3.0** | Worker (`/worker` no repositório) + Atacadão por CEP/unidade, preço automático, selos site/manual/aproximado, IndexedDB v3 | Publicada |
+| **v0.4.0** | Mais redes VTEX no Worker (parâmetro `rede`): Sam's Club e Bistek por CEP/loja; Supernosso e Covabra com preço único; busca pelo nome quando o código não existe (aproximado, com nome achado); IndexedDB v4 | **Pronta localmente** |
+| **v0.5.0** | Leitor do **QR Code da NFC-e** (nota fiscal) para registrar os preços reais pagos | Planejada |
+| **v0.6.0** | **Foto do carrinho**: reconhecer vários produtos por uma foto (protótipo feito; depende de custo/precisão) | Planejada |
+| **v0.7.0** | Polimento: tema escuro/alto contraste, backup/exportação, acessibilidade, ícone final | Planejada |
+
+### Redes testadas em 12/10/2026 (v0.4.0)
+
+| Rede | Preço muda por loja? | Fluxo no app |
+|---|---|---|
+| Atacadão | Sim | CEP → unidade |
+| Sam's Club | Sim (ex.: Açúcar União 1 kg R$ 3,49 no Bom Retiro, R$ 4,15 na Pampulha) | CEP → unidade (`samsclub…`) |
+| Bistek | Sim (Açúcar União 1 kg R$ 4,42 / 4,01 / 4,32 em três lojas) | CEP → loja (`bistek…`, só SC/RS) |
+| Supernosso | Não (mesmo preço em 4 lojas de BH) | Preço único da rede |
+| Covabra | Uma só loja online (`covabra10`, Campinas) | Preço único da rede |
 
 ## 11. Plano de testes
 

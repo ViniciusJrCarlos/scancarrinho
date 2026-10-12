@@ -5,9 +5,10 @@
  * cart     carrinho atual (barcode = chave; quantidade é somada)
  * history  compras finalizadas (id auto)
  * v3: preços e carrinho ganham "origem" (site | manual | aproximado); lojas ganham "tipo".
+ * v4: lojas do Atacadão (tipo "atacadao") viram tipo "auto" + rede "atacadao" (várias redes).
  */
 const DB_NAME = "scancarrinho";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 let dbPromise = null;
 
 export function openDB() {
@@ -40,6 +41,15 @@ export function openDB() {
         marcar("prices", "origem", "manual");
         marcar("cart", "origem", "manual");
         marcar("stores", "tipo", "manual");
+      }
+      if (e.oldVersion >= 2 && e.oldVersion < 4) {
+        // Migração -> v4: mesma loja, mesmo id (histórico e carrinho continuam valendo).
+        r.transaction.objectStore("stores").openCursor().onsuccess = (ev) => {
+          const c = ev.target.result;
+          if (!c) return;
+          if (c.value.tipo === "atacadao") c.update({ ...c.value, tipo: "auto", rede: "atacadao" });
+          c.continue();
+        };
       }
     };
     r.onsuccess = () => resolve(r.result);

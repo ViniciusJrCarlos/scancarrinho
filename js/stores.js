@@ -1,6 +1,8 @@
 import { dbAll, dbGet, dbPut } from "./db.js";
+import { REDES, ehAuto } from "./redes.js";
 /*
- * Lojas. Atacadão: uma loja por unidade (id "atacadao:<unidade>"), preço automático.
+ * Lojas. Redes automáticas (tipo "auto" + rede): uma loja por unidade nas regionais
+ * (id "atacadao:<unidade>", "sams:<unidade>"…) ou uma loja só nas de preço único (id "supernosso").
  * Carrefour, Pão de Açúcar, Extra, Assaí e lojas criadas pelo usuário: preço manual.
  */
 const PADRAO = [
@@ -12,7 +14,7 @@ const PADRAO = [
 const CORES = ["#6D4C41", "#00838F", "#5E35B1", "#AD1457", "#558B2F", "#EF6C00"];
 const CHAVE = "scancarrinho.loja";
 const CHAVE_CEP = "scancarrinho.cep";
-export const COR_ATACADAO = "#F57C00";
+export const COR_ATACADAO = REDES.atacadao.cor;
 
 export function iniciais(nome) {
   const ps = nome.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter((w) => w.length > 2 || /\d/.test(w));
@@ -21,7 +23,7 @@ export function iniciais(nome) {
 }
 export async function listarLojas() {
   let lojas = await dbAll("stores");
-  if (!lojas.some((l) => !l.custom && l.tipo !== "atacadao")) {
+  if (!lojas.some((l) => !l.custom && !ehAuto(l))) {
     for (const [i, l] of PADRAO.entries()) await dbPut("stores", { ...l, initials: iniciais(l.name), custom: false, tipo: "manual", order: i });
     lojas = await dbAll("stores");
   }
@@ -36,15 +38,18 @@ export async function criarLoja(nome) {
   await dbPut("stores", loja);
   return loja;
 }
-/* Cria (ou atualiza) a loja de uma unidade do Atacadão. */
-export async function lojaAtacadao({ unidadeId, unidadeNome, cep, regionId }) {
-  const id = "atacadao:" + unidadeId;
+/* Cria (ou atualiza) a loja de uma rede automática (unidade, nas regionais). */
+export async function lojaRede({ rede, unidadeId = "", unidadeNome = "", cep = "", regionId = null }) {
+  const R = REDES[rede];
+  const id = R.regional ? `${rede}:${unidadeId}` : rede;
   const atual = await dbGet("stores", id);
-  const loja = { ...(atual || {}), id, name: "Atacadão " + unidadeNome, initials: "AT", color: COR_ATACADAO, custom: true,
-    tipo: "atacadao", unidadeId, unidadeNome, cep, regionId, order: atual?.order ?? -1 };
+  const nome = !R.regional ? R.nome : unidadeNome.toLowerCase().startsWith(R.nome.toLowerCase()) ? unidadeNome : `${R.nome} ${unidadeNome}`;
+  const loja = { ...(atual || {}), id, name: nome, initials: R.sigla, color: R.cor, custom: true, tipo: "auto", rede,
+    unidadeId: R.regional ? unidadeId : "", unidadeNome: R.regional ? unidadeNome : "", cep, regionId, order: atual?.order ?? -1 };
   await dbPut("stores", loja);
   return loja;
 }
+export const lojaAtacadao = (u) => lojaRede({ rede: "atacadao", ...u });
 export const lojaAtualId = () => localStorage.getItem(CHAVE);
 export const definirLojaAtual = (id) => localStorage.setItem(CHAVE, id);
 export const cepSalvo = () => localStorage.getItem(CHAVE_CEP) || "";

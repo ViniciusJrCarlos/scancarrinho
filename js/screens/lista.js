@@ -10,6 +10,7 @@ import { totais, remover, definir, esvaziar } from "../cart.js";
 import { selo } from "./produto.js";
 import { atualizarItem } from "../auto.js";
 import { PRECO_VELHO_MS } from "../config.js";
+import { ehAuto } from "../redes.js";
 
 const ORDENS = { nome: "Nome", preco: "Maior valor", recentes: "Mais recentes" };
 const CHAVE = "scancarrinho.ordem";
@@ -34,8 +35,10 @@ export async function render(view, { topo }) {
     const sel = h("select", { class: "ordem", "aria-label": "Ordenar por", onchange: (e) => { ordem = e.target.value; localStorage.setItem(CHAVE, ordem); desenhar(); } },
       Object.entries(ORDENS).map(([v, l]) => h("option", { value: v, selected: v === ordem }, l)));
     const dif = t.total - t.totalMedia;
-    const auto = loja?.tipo === "atacadao";
-    const pendentes = auto ? it.filter((i) => /^\d{8,14}$/.test(i.barcode) && (i.origem === "aproximado" || (i.origem === "site" && Date.now() - (i.consultadoEm || 0) > PRECO_VELHO_MS))) : [];
+    const auto = ehAuto(loja);
+    const velho = (i) => Date.now() - (i.consultadoEm || 0) > PRECO_VELHO_MS;
+    // Aproximado sem nome achado = último preço salvo (offline): atualizar. Achado pelo nome: só quando antigo.
+    const pendentes = auto ? it.filter((i) => /^\d{8,14}$/.test(i.barcode) && ((i.origem === "aproximado" && !i.nomeEncontrado) || ((i.origem === "site" || i.nomeEncontrado) && velho(i)))) : [];
     const aviso = pendentes.length ? h("div", { class: "card aviso-precos" },
       h("p", {}, `${pendentes.length} ${pendentes.length === 1 ? "preço aproximado ou antigo" : "preços aproximados ou antigos"}.`),
       h("button", { type: "button", class: "btn btn-claro", id: "btn-atualizar-precos", onclick: async (e) => {
@@ -56,7 +59,8 @@ export async function render(view, { topo }) {
           h("a", { class: "item-txt", href: "#/produto/" + encodeURIComponent(i.barcode) },
             h("strong", {}, i.name),
             h("small", {}, `${i.qty} × ${brl(i.cents)}`, i.media && i.media.count > 1 ? ` · média ${brl(i.media.cents)}` : ""),
-            h("span", { class: "selos" }, selo(i.origem, i.disponivel))),
+            h("span", { class: "selos" }, selo(i.origem, i.disponivel)),
+            i.nomeEncontrado ? h("small", { class: "parecido" }, "parecido no site: " + i.nomeEncontrado) : null),
           h("span", { class: "item-valor" }, brl(i.total)),
           h("div", { class: "item-acoes" },
             h("button", { type: "button", class: "icon-btn redondo", "aria-label": `Mais um ${i.name}`, onclick: async () => { await definir(i.barcode, i.qty + 1, i.cents, i.storeId); desenhar(); } }, icon("plus")),

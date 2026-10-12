@@ -11,7 +11,7 @@ export const CATEGORIAS = [
   { id: "outros", nome: "Outros", cor: "#757575" },
 ];
 export const categoria = (id) => CATEGORIAS.find((c) => c.id === id) || CATEGORIAS.at(-1);
-/* Converte a categoria do site do Atacadão para uma categoria do app. */
+/* Converte a categoria do site da rede (VTEX) para uma categoria do app. */
 export function categoriaDoSite(cat = "", sub = "") {
   const t = (cat + " " + sub).toLocaleLowerCase("pt-BR");
   if (/bebida|refrigerante|suco|cerveja|vinho|água/.test(t)) return "bebidas";

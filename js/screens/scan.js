@@ -11,12 +11,15 @@ import { adicionar, itemDoCarrinho, totais } from "../cart.js";
 import { guardarResultadoSite } from "../auto.js";
 import { iniciarScanner, scannerDisponivel } from "../scanner.js";
 import { avatarLoja } from "./loja.js";
+import { ehAuto, nomeRede } from "../redes.js";
 
 const irProduto = (codigo, extra = "") => go("#/produto/" + encodeURIComponent(codigo) + "?de=scan" + extra);
 
 /*
  * Usado pela câmera e pela digitação.
- * Atacadão: busca o preço da unidade no site. Sem resposta: usa o último preço salvo (aproximado) ou pede o preço.
+ * Rede automática (Atacadão, Sam's Club, Bistek, Supernosso, Covabra): busca o preço no site.
+ * Código inexistente na rede: o Worker tenta pelo nome (preço "aproximado", com o nome achado).
+ * Sem resposta: usa o último preço salvo (aproximado) ou pede o preço.
  * Outras lojas: produto conhecido com preço entra direto (+1); novo pede nome e preço.
  */
 export async function tratarCodigo(codigo, { aoAdicionar, aoBuscar } = {}) {
@@ -24,7 +27,7 @@ export async function tratarCodigo(codigo, { aoAdicionar, aoBuscar } = {}) {
   const loja = await buscarLoja(storeId);
   const prod = await buscarProduto(codigo);
 
-  if (loja?.tipo === "atacadao" && /^\d{8,14}$/.test(codigo)) {
+  if (ehAuto(loja) && /^\d{8,14}$/.test(codigo)) {
     const noCarrinho = await itemDoCarrinho(codigo);
     if (noCarrinho?.origem === "site" && Date.now() - (noCarrinho.consultadoEm || 0) < REUSAR_PRECO_MS) {
       await adicionar(codigo, 1, noCarrinho.cents, storeId);
@@ -34,13 +37,15 @@ export async function tratarCodigo(codigo, { aoAdicionar, aoBuscar } = {}) {
       return true;
     }
     aoBuscar?.(true);
-    const r = await consultarPreco(codigo, loja);
+    const r = await consultarPreco(codigo, loja, prod?.name);
     aoBuscar?.(false);
     if (r.ok) {
       const meta = await guardarResultadoSite(codigo, storeId, r.dados);
       await adicionar(codigo, 1, r.dados.centavos, storeId, meta);
       vibrate();
-      toast(`${r.dados.nome} +1 · ${brl(r.dados.centavos)} · preço do site` + (meta.disponivel ? "" : " (sem estoque no site: confira na gôndola)"),
+      const nomeItem = meta.nomeEncontrado ? prod?.name || r.dados.nome : r.dados.nome;
+      toast(`${nomeItem} +1 · ${brl(r.dados.centavos)} · ` + (meta.nomeEncontrado ? (nomeItem === meta.nomeEncontrado ? "aproximado (achado pelo nome)" : `aproximado (parecido: ${meta.nomeEncontrado})`) : "preço do site")
+        + (meta.disponivel ? "" : " (sem estoque no site: confira na gôndola)"),
         { action: "Ver", onAction: () => irProduto(codigo) });
       aoAdicionar?.();
       return true;
@@ -79,12 +84,12 @@ export async function tratarCodigo(codigo, { aoAdicionar, aoBuscar } = {}) {
 export async function render(view, { topo }) {
   topo({ titulo: "Escanear" });
   const loja = await buscarLoja(lojaAtualId());
-  const auto = loja?.tipo === "atacadao";
+  const auto = ehAuto(loja);
   const video = h("video", { class: "video", playsinline: true, muted: true, "aria-label": "Imagem da câmera" });
   const status = h("p", { class: "scan-status" }, "Preparando a câmera…");
   const camBox = h("div", { class: "camera" }, video, h("div", { class: "mira", "aria-hidden": "true" }), status);
   const resumoBar = h("a", { href: "#/lista", class: "barra-total" });
-  const buscando = h("p", { class: "buscando", hidden: true, role: "status" }, h("span", { class: "giro", "aria-hidden": "true" }), "Buscando preço no Atacadão…");
+  const buscando = h("p", { class: "buscando", hidden: true, role: "status" }, h("span", { class: "giro", "aria-hidden": "true" }), "Buscando preço no " + nomeRede(loja) + "…");
   let scanner = null, saiu = false, ocupado = false;
 
   const atualizarBarra = async () => {
@@ -137,7 +142,7 @@ export async function render(view, { topo }) {
 
   view.append(
     h("a", { href: "#/loja", class: "pilula-loja" }, loja ? avatarLoja(loja, "avatar avatar-mini") : null, h("span", {}, loja?.name || "Loja"), h("small", {}, "trocar")),
-    auto ? h("p", { class: "selo-auto" }, icon("tag"), " Preço automático pelo site do Atacadão") : null,
+    auto ? h("p", { class: "selo-auto" }, icon("tag"), " Preço automático pelo site do " + nomeRede(loja)) : null,
     camBox, form, resumoBar);
   atualizarBarra();
   ligar();

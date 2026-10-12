@@ -2,10 +2,10 @@
 import { initApp } from "./app.js";
 import { initInstall } from "./ui/install.js";
 import { toast } from "./ui/toast.js";
-import { setPriceSource, atacadaoPriceSource } from "./prices.js";
+import { setPriceSource, sitePriceSource } from "./prices.js";
 
-// Fonte de preços: Atacadão (Worker) + histórico local. Lojas manuais seguem só com o histórico.
-setPriceSource(atacadaoPriceSource);
+// Fonte de preços: redes automáticas (Worker) + histórico local. Lojas manuais seguem só com o histórico.
+setPriceSource(sitePriceSource);
 
 initApp();
 initInstall();

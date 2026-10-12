@@ -10,6 +10,7 @@ import { buscarProduto, salvarProduto, codigoValido } from "../products.js";
 import { historicoPreco, mediaPreco, ultimoPreco, registrarPreco } from "../prices.js";
 import { itemDoCarrinho, definir, adicionar, remover } from "../cart.js";
 import { atualizarItem } from "../auto.js";
+import { ehAuto, nomeRede } from "../redes.js";
 
 export const ORIGENS = { site: "preço do site", manual: "manual", aproximado: "aproximado" };
 export function selo(origem, disponivel) {
@@ -17,12 +18,12 @@ export function selo(origem, disponivel) {
     disponivel === false ? h("span", { class: "selo selo-alerta" }, "sem estoque no site") : null];
 }
 const hora = (ms) => new Date(ms).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-const MOTIVOS = {
-  nao_encontrado: "Não encontramos este código no Atacadão. Informe o nome e o preço da etiqueta.",
+const MOTIVOS = (rede) => ({
+  nao_encontrado: `Não encontramos este produto no ${rede}. Informe o nome e o preço da etiqueta.`,
   offline: "Sem internet agora. Informe o preço da etiqueta (ou tente depois).",
   limite: "Muitas consultas seguidas. Informe o preço ou tente em instantes.",
-  origem_indisponivel: "O site do Atacadão não respondeu. Informe o preço da etiqueta.",
-};
+  origem_indisponivel: `O site do ${rede} não respondeu. Informe o preço da etiqueta.`,
+});
 
 export async function render(view, { arg: codigo, params, topo }) {
   const de = params.get("de") === "scan" ? "#/scan" : "#/lista";
@@ -32,7 +33,7 @@ export async function render(view, { arg: codigo, params, topo }) {
   const [loja, prod, ult, media, hist, noCarrinho] = await Promise.all([
     buscarLoja(storeId), buscarProduto(codigo), ultimoPreco(storeId, codigo), mediaPreco(storeId, codigo), historicoPreco(storeId, codigo), itemDoCarrinho(codigo)]);
   const novo = !prod;
-  const auto = loja?.tipo === "atacadao" && /^\d{8,14}$/.test(codigo);
+  const auto = ehAuto(loja) && /^\d{8,14}$/.test(codigo);
   const travado = auto && noCarrinho?.origem === "site";
   topo({ titulo: novo ? "Novo produto" : "Detalhe do produto", voltar: de });
 
@@ -48,7 +49,7 @@ export async function render(view, { arg: codigo, params, topo }) {
   const passo = (d) => { qtd = Math.max(1, Math.min(999, qtd + d)); qtdTxt.textContent = String(qtd); };
   const erro = h("p", { class: "erro", hidden: true });
   const semCodigo = codigo.startsWith("SEM-");
-  const motivo = MOTIVOS[params.get("motivo")];
+  const motivo = MOTIVOS(nomeRede(loja))[params.get("motivo")];
 
   const atualizar = auto && noCarrinho ? h("button", { type: "button", class: "btn btn-claro btn-bloco", id: "btn-atualizar", onclick: async (e) => {
     e.currentTarget.disabled = true;
@@ -63,7 +64,8 @@ export async function render(view, { arg: codigo, params, topo }) {
         h("small", {}, noCarrinho ? "Preço no carrinho" : "Último preço nesta loja"),
         h("strong", { class: "valor", id: "preco-atual" }, precoInicial != null ? brl(precoInicial) : "—"),
         h("small", {}, noCarrinho ? selo(noCarrinho.origem, noCarrinho.disponivel) : null, " ", h("b", {}, loja?.name || "")),
-        noCarrinho?.origem === "site" && noCarrinho.consultadoEm ? h("small", {}, "consultado em " + hora(noCarrinho.consultadoEm)) : null)),
+        noCarrinho?.nomeEncontrado ? h("small", { class: "parecido", id: "nome-encontrado" }, "Código não existe no site; preço do parecido: " + noCarrinho.nomeEncontrado) : null,
+        (noCarrinho?.origem === "site" || noCarrinho?.nomeEncontrado) && noCarrinho.consultadoEm ? h("small", {}, "consultado em " + hora(noCarrinho.consultadoEm)) : null)),
     h("div", { class: "card info" }, h("span", { class: "info-ico" }, icon("chart")),
       h("div", {}, h("small", {}, "Preço médio observado nesta loja"), h("strong", { class: "valor", id: "preco-medio" }, media ? brl(media.cents) : "—"),
         h("small", {}, media ? `média de ${media.count} ${media.count === 1 ? "registro" : "registros"}` : "ainda sem registros"))));
@@ -79,7 +81,7 @@ export async function render(view, { arg: codigo, params, topo }) {
     if (c > 9999999) return mostrarErro("Preço muito alto. Confira o valor.", preco);
     const mudouPreco = c !== precoInicial;
     await salvarProduto({ barcode: codigo, name: n, category: cat.value });
-    const meta = mudouPreco || !noCarrinho ? { origem: "manual", disponivel: undefined } : {};
+    const meta = mudouPreco || !noCarrinho ? { origem: "manual", disponivel: undefined, nomeEncontrado: undefined } : {};
     if (mudouPreco || !noCarrinho) await registrarPreco(storeId, codigo, c, { origem: "manual" });
     if (noCarrinho) await definir(codigo, qtd, c, storeId, meta);
     else await adicionar(codigo, qtd, c, storeId, meta);

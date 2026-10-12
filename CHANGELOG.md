@@ -3,6 +3,26 @@
 Todas as mudanças importantes do ScanCarrinho ficam registradas aqui.
 Cada versão validada recebe uma tag no Git (ex.: `v0.1.0`).
 
+## [0.4.0] — 2026-10-12
+
+Mais redes com preço automático: Sam's Club, Bistek, Supernosso e Covabra, além do Atacadão.
+
+### Adicionado
+- Worker: parâmetro `rede` (`atacadao`, `sams`, `bistek`, `supernosso`, `covabra`) nos endpoints `/unidades`, `/produto` e `/preco`. Sem `rede` continua sendo Atacadão (o app 0.3.0 segue funcionando).
+- Redes com preço por loja (testado em 12/10/2026: o preço muda entre unidades): **Atacadão**, **Sam's Club** e **Bistek**, escolhidas pelo CEP.
+- Redes com preço único (mesmo preço em todas as lojas): **Supernosso** e **Covabra**, sem CEP.
+- Busca pelo nome quando o código não existe na rede: o preço entra como **aproximado** e o app mostra o nome do produto parecido ("parecido no site: …").
+- Tela "Onde você compra?": um só CEP busca as lojas do Atacadão, Sam's Club e Bistek; Supernosso e Covabra aparecem direto.
+
+### Alterado
+- IndexedDB versão 4: lojas do Atacadão viram `tipo: "auto"` com `rede: "atacadao"` (mesmo id; carrinho e histórico continuam).
+- Textos "Buscando preço no …", selos e avisos usam o nome da rede escolhida.
+- `js/atacadao.js` virou `js/precos-site.js`; nova lista de redes em `js/redes.js`.
+- CSP sem mudança (mesmo Worker).
+
+### Ainda não incluído
+- Leitura do QR Code da nota fiscal (NFC-e) e "foto do carrinho": adiadas para versões futuras.
+
 ## [0.3.0] — 2026-10-12
 
 Preço automático pelo site do Atacadão: escaneou, o preço da sua unidade aparece sozinho.

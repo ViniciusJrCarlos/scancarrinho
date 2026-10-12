@@ -10,6 +10,7 @@ import { totais, esvaziar } from "../cart.js";
 import { dbAll, dbPut } from "../db.js";
 import { podeInstalar, instalar } from "../ui/install.js";
 import { APP_VERSION } from "../version.js";
+import { ehAuto, nomeRede } from "../redes.js";
 
 export async function render(view, { topo }) {
   topo({ titulo: "Resumo" });
@@ -33,8 +34,8 @@ export async function render(view, { topo }) {
       h("small", {}, "Total do seu carrinho"),
       h("strong", { class: "total-valor", id: "total-resumo" }, brl(t.total)),
       h("p", {}, `${t.qtd} ${t.qtd === 1 ? "item" : "itens"} · ${loja?.name || ""}`),
-      loja?.tipo === "atacadao" && t.itens.length ? h("p", { class: "nota" }, "Preços do site do Atacadão (" + loja.unidadeNome + "). Podem diferir da gôndola.") : null,
-      t.itens.some((i) => i.origem === "aproximado") ? h("p", { class: "nota" }, "Há preços aproximados (último preço salvo). Atualize na Lista.") : null),
+      ehAuto(loja) && t.itens.length ? h("p", { class: "nota" }, `Preços do site ${loja.unidadeNome ? `(${loja.name})` : `do ${nomeRede(loja)}`}. Podem diferir da gôndola.`) : null,
+      t.itens.some((i) => i.origem === "aproximado") ? h("p", { class: "nota" }, "Há preços aproximados (último preço salvo ou produto parecido achado pelo nome). Confira na Lista.") : null),
     t.itens.length ? h("section", { class: "card" },
       h("h3", {}, "Resumo por categoria"),
       h("ul", { class: "cats" }, cats.map(([id, v]) => {

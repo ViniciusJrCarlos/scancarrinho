@@ -1,6 +1,6 @@
 import { WORKER_URL, TEMPO_MAX_MS } from "./config.js";
 /*
- * Cliente do Worker de preços (Atacadão). Nunca lança erro: devolve
+ * Cliente do Worker de preços (Atacadão, Sam's Club, Bistek, Supernosso, Covabra). Nunca lança erro: devolve
  * { ok: true, dados } ou { ok: false, erro: "nao_encontrado" | "limite" | "origem_indisponivel" | "offline" | "invalido", mensagem }.
  */
 async function chamar(caminho) {
@@ -19,5 +19,8 @@ async function chamar(caminho) {
       mensagem: e?.name === "AbortError" ? "A consulta demorou demais." : "Não foi possível consultar o preço." };
   } finally { clearTimeout(t); }
 }
-export const buscarUnidades = (cep) => chamar("/unidades?cep=" + encodeURIComponent(cep));
-export const buscarPrecoAtacadao = (ean, unidade) => chamar(`/preco?ean=${encodeURIComponent(ean)}&unidade=${encodeURIComponent(unidade)}`);
+const q = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v)).toString();
+export const buscarUnidades = (cep, rede = "atacadao") => chamar("/unidades?" + q({ cep, rede }));
+/* nome: nome do produto já conhecido, ajuda a busca aproximada quando o código não existe na rede. */
+export const buscarPreco = (ean, { rede = "atacadao", unidade, nome } = {}) =>
+  chamar("/preco?" + q({ ean, rede, unidade, nome: (nome || "").slice(0, 120) }));
